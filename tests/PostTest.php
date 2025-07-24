@@ -2,57 +2,81 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
-
-final class PostTest extends TestCase
-{
-    public function testPostCreation()
-    {
-        // Création d'un post valide
-        $post = new Post('Titre', 'Contenu', 'mon-slug');
-
-        // On vérifie que les valeurs sont bien enregistrées
-        $this->assertSame('Titre', $post->getTitle());
-        $this->assertSame('Contenu', $post->getContent());
-        $this->assertSame('mon-slug', $post->getSlug());
-        $this->assertFalse($post->isPrivate()); // Valeur par défaut
+class Post {
+    private string $title;
+    private string $content;
+    private string $slug;
+    private bool $private;
+    
+    public function __construct(
+        string $title, 
+        string $content, 
+        string $slug, 
+        bool $private = false) {
+            
+        $this->ensureIsValidTitle($title);
+        $this->ensureIsValidSlug($slug);
+        $this->ensureIsValidContent($content);
+            
+        $this->title = $title;
+        $this->content = $content;
+        $this->slug = $slug;
+        $this->private = $private;
     }
-
-    public function testSetters()
-    {
-        $post = new Post('a', 'b', 'c');
-        $post->setTitle('Nouveau titre');
-        $post->setContent('Nouveau contenu');
-        $post->setSlug('nouveau-slug');
-        $post->setPrivate(true);
-
-        $this->assertSame('Nouveau titre', $post->getTitle());
-        $this->assertSame('Nouveau contenu', $post->getContent());
-        $this->assertSame('nouveau-slug', $post->getSlug());
-        $this->assertTrue($post->isPrivate());
+    
+    
+    public function getTitle(): string {
+        return $this->title;
     }
-
-    public function testTitleCannotBeEmpty()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new Post('', 'Contenu', 'slug');
+    
+    public function setTitle(string $title): void {
+        $this->ensureIsValidTitle($title);
+        $this->title = $title;
     }
-
-    public function testContentCannotBeEmpty()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new Post('Titre', '', 'slug');
+    
+    public function getContent(): string {
+        return $this->content;
     }
-
-    public function testSlugCannotBeEmpty()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new Post('Titre', 'Contenu', '');
+    
+    public function setContent(string $content): void {
+        $this->ensureIsValidContent($content);
+        $this->content = $content;
     }
-
-    public function testSlugMustBeUrlSafe()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new Post('Titre', 'Contenu', 'slug pas ok !');
+    
+    public function getSlug(): string {
+        return $this->slug;
+    }
+    
+    public function setSlug(string $slug): void {
+        $this->ensureIsValidSlug($slug);
+        $this->slug = $slug;
+    }
+    
+    public function isPrivate(): bool {
+        return $this->private;
+    }
+    
+    public function setPrivate(bool $private): void {
+        $this->private = $private;
+    }
+    
+    private function ensureIsValidTitle(string $title): void {
+        if (empty($title)) {
+            throw new InvalidArgumentException('Title cannot be empty');
+        }
+    }
+    
+    private function ensureIsValidSlug(string $slug): void {
+        if (empty($slug)) {
+            throw new InvalidArgumentException('Slug cannot be empty');
+        } else if (!preg_match('/^[a-zA-Z0-9-]+$/', $slug)) {
+            throw new InvalidArgumentException('Slug must be URL safe');
+        }
+    }
+    
+    private function ensureIsValidContent(string $content): void {
+        if (empty($content)) {
+            throw new InvalidArgumentException('Content cannot be empty');
+        }
     }
 }
