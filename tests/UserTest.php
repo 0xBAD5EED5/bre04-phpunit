@@ -13,53 +13,83 @@ final class UserTest extends TestCase
         $this->assertSame('Martin', $user->getLastName());
         $this->assertSame('alice@example.com', $user->getEmail());
         $this->assertSame('Strong1!', $user->getPassword());
-        $this->assertSame(['ANONYMOUS'], $user->getRoles()); // Valeur par défaut
+        $this->assertSame(['ANONYMOUS'], $user->getRoles());
     }
 
-    public function testSetters()
+    public function testUserCanBeAdmin()
     {
-        $user = new User('a', 'b', 'a@b.fr', 'A1!azerty');
-        $user->setFirstName('Bob');
-        $user->setLastName('Smith');
-        $user->setEmail('bob@smith.com');
-        $user->setPassword('Password1!');
-        $user->setRoles(['USER']);
-
-        $this->assertSame('Bob', $user->getFirstName());
-        $this->assertSame('Smith', $user->getLastName());
-        $this->assertSame('bob@smith.com', $user->getEmail());
-        $this->assertSame('Password1!', $user->getPassword());
-        $this->assertSame(['USER'], $user->getRoles());
+        $user = new User('Alice', 'Martin', 'alice@example.com', 'Strong1!', ['ADMIN']);
+        $this->assertSame(['ADMIN'], $user->getRoles());
+        // Changement du rôle
+        $user->addRole('USER');
+        $this->assertSame(['ADMIN', 'USER'], $user->getRoles());
+        // Retrait de tous les rôles spéciaux
+        $user->removeRole('ADMIN');
+        $user->removeRole('USER');
+        $this->assertSame(['ANONYMOUS'], $user->getRoles());
     }
 
     public function testFirstNameCannotBeEmpty()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('First name cannot be empty');
         new User('', 'Martin', 'alice@example.com', 'Strong1!');
     }
 
     public function testLastNameCannotBeEmpty()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Last name cannot be empty');
         new User('Alice', '', 'alice@example.com', 'Strong1!');
     }
 
     public function testEmailMustBeValid()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid email address');
         new User('Alice', 'Martin', 'not-an-email', 'Strong1!');
     }
 
-    public function testPasswordMustBeStrong()
+    public function testPasswordTooShort()
     {
         $this->expectException(InvalidArgumentException::class);
-        // Trop court, pas de majuscule, pas de caractère spécial
-        new User('Alice', 'Martin', 'alice@example.com', 'azertyu');
+        $this->expectExceptionMessage('Password must be at least 8 characters');
+        new User('Alice', 'Martin', 'alice@example.com', 'Az1!');
+    }
+
+    public function testPasswordNoUppercase()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Password must contain at least one uppercase letter');
+        new User('Alice', 'Martin', 'alice@example.com', 'password1!');
+    }
+
+    public function testPasswordNoDigit()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Password must contain at least one digit');
+        new User('Alice', 'Martin', 'alice@example.com', 'Password!');
+    }
+
+    public function testPasswordNoSpecialChar()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Password must contain at least one special character');
+        new User('Alice', 'Martin', 'alice@example.com', 'Password1');
     }
 
     public function testRolesCannotMixAnonymousWithUserOrAdmin()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot have ANONYMOUS with USER or ADMIN roles');
         new User('Alice', 'Martin', 'alice@example.com', 'Strong1!', ['ANONYMOUS', 'USER']);
+    }
+
+    public function testAddInvalidRole()
+    {
+        $user = new User('Alice', 'Martin', 'alice@example.com', 'Strong1!');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid role name: SUPERUSER');
+        $user->addRole('SUPERUSER');
     }
 }
